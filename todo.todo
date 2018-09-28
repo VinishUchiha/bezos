@@ -1,0 +1,11 @@
+Framework:
+    ☐ Make the runner class robust enought to support both policy based and value based algorithm
+    ☐ Implement a DDDQN Network
+    ☐ Make an interface for the algorithms (learn, act, prepare (for filling memories and stuff)
+    ☐ Focusing on having a working implementation of A2C and PPO + Vizdoom
+    ☐ HARD: Make a prioritized replay rollout for DDDQN
+    ☐ Implement Visdom instead of tensorboard
+    ☐ Have a command line tool to select env + algo + variables
+    ☐ Load hyperparameters through a config file yaml
+    ☐ Benchmark the shit out of it
+    ☐ Make it compatible with Minecraft
