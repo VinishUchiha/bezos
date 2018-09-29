@@ -23,6 +23,9 @@ warnings.filterwarnings('ignore')
 
 def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_frame):
     def _thunk():
+        if env_id.find('Vizdoom') > -1:
+            import kits.doom  # noqa: F401
+
         env = gym.make(env_id)
         is_atari = hasattr(gym.envs, 'atari') and isinstance(
             env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
