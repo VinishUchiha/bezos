@@ -2,7 +2,7 @@
 These functions are used to vectorize a bunch of environments to have multiple processes runnning in parallel
 """
 import os
-
+import random
 import gym
 import numpy as np
 from skimage import transform
@@ -12,7 +12,7 @@ from gym.spaces.box import Box
 import warnings  # This ignore all the warning messages that are normally printed because of skiimage
 
 from kits.minecraft.marlo_parallel import MarloEnvMaker
-
+from utils import stdout_redirected
 
 from baselines import bench
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
@@ -65,6 +65,7 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_fr
 
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir,
                   device, allow_early_resets, grayscale, skip_frame, scale, num_frame_stack=None):
+    
     marlo_env_maker = None
     if env_name.find('MarLo') > -1:
         marlo_env_maker = MarloEnvMaker(num_processes)
@@ -86,14 +87,14 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir,
             envs = VecNormalize(envs, gamma=gamma)
 
     envs = VecBezos(envs, device)
-    print(envs.observation_space.shape)
 
     if num_frame_stack is not None:
         envs = VecBezosFrameStack(envs, num_frame_stack, device)
     elif len(envs.observation_space.shape) == 3:
         print("Auto Frame Stacking activated")
         envs = VecBezosFrameStack(envs, 4, device)
-
+    print("Observation space: ", envs.observation_space.shape)
+    print("Action space: ", envs.action_space)
     return envs
 
 
@@ -118,8 +119,7 @@ class PreprocessImage(gym.ObservationWrapper):
             img = img.mean(-1, keepdims=True)
         # print(img.shape)
         # print(img)
-        imsave('imgs/name-{}.png'.format(random.randint(1, 1000000)),
-               img[:, :, 0])
+        # imsave('imgs/name-{}.png'.format(random.randint(1, 1000000)),img[:, :, 0] / 255)
         img = img.astype('float32')
         return img
 

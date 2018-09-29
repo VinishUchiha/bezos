@@ -10,6 +10,7 @@ decreasing_lr: False
 grayscale: True
 skip_frame: 1
 reward_scaling: 1
+num_frame_stack: 4
 
 algorithm_parameters:
   clip_param: 0.1

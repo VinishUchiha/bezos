@@ -3,10 +3,22 @@ Helpers for dealing with vectorized environments.
 """
 
 from collections import OrderedDict
+from contextlib import contextmanager
+import sys
 
 import gym
 import numpy as np
 
+
+@contextmanager
+def stdout_redirected(new_stdout):
+    saved_stdout = sys.stdout
+    sys.stdout = new_stdout
+    try:
+        yield None
+    finally:
+        sys.stdout.close()
+        sys.stdout = saved_stdout
 
 def copy_obs_dict(obs):
     """
