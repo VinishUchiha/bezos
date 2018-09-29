@@ -12,6 +12,7 @@ class Flatten(nn.Module):
 
 class NeuralCategorical(nn.Module):
     def __init__(self, num_features, num_outputs):
+        super(NeuralCategorical, self).__init__()
         # Fully connected layer mapping features to logits
         self.fc = nn.Linear(num_features, num_outputs)
         # Init the weights and biases
@@ -36,7 +37,7 @@ class ActorCriticNetwork(nn.Module):
                         lambda x: nn.init.constant_(x, 0))
 
         self.critic_linear = init_(
-            nn.Linear(base_kwargs.get(['hidden_size'], 512), 1))
+            nn.Linear(base_kwargs['hidden_size'], 1))
 
         if action_space.__class__.__name__ == "Discrete":
             num_outputs = action_space.n
@@ -63,11 +64,11 @@ class ActorCriticNetwork(nn.Module):
 
         # We want action_log_probs and action to be a vector, not a scalar (which is the default output of torch.Categorical)
         if deterministic:
-            action = dist.mode().unsqueeze(-1)
+            action = dist.probs.argmax(dim=1, keepdim=True)
         else:
             action = dist.sample().unsqueeze(-1)
 
-        action_log_probs = dist.log_probs(action.squeeze(-1)).unsqueeze(-1)
+        action_log_probs = dist.log_prob(action.squeeze(-1)).unsqueeze(-1)
 
         return value, action, action_log_probs, rnn_hxs
 
@@ -80,7 +81,7 @@ class ActorCriticNetwork(nn.Module):
         features, rnn_hxs = self.base(inputs, rnn_hxs, masks)
         dist = self.dist(features)
 
-        action_log_probs = dist.log_probs(action)
+        action_log_probs = dist.log_prob(action.squeeze(-1)).unsqueeze(-1)
         dist_entropy = dist.entropy().mean()
 
         value = self.critic_linear(features)

@@ -9,3 +9,4 @@ Framework:
     ☐ Load hyperparameters through a config file yaml
     ☐ Benchmark the shit out of it
     ☐ Make it compatible with Minecraft
+    ☐ Make your own gym wrapper around visdoom

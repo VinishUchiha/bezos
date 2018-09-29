@@ -1,0 +1,32 @@
+no_cuda: True
+env_name: "PongNoFrameskip-v4"
+epochs: 100
+num_steps: 5
+num_updates_per_epoch: 1000
+num_processes: 16
+num_test_episodes: 5
+test_every_n_epochs: 1
+use_gae: False
+gamma: 0.99
+tau: 0.95
+seed: 1
+log_dir: '/tmp/gym'
+save_dir: './trained_models/'
+save_interval: 100
+algorithm: 'A2C'
+
+grayscale: True
+skip_frame: 4
+num_frame_stack: 4
+
+policy_parameters:
+  recurrent: False
+  hidden_size: 512
+
+algorithm_parameters:
+  value_loss_coef: 0.5
+  entropy_coef: 0.01
+  lr: 0.0007
+  eps: 0.00001
+  alpha: 0.99
+  max_grad_norm: 0.5

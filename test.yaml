@@ -1,0 +1,4 @@
+no_cuda: False
+env_name: "PongNoFrameskip-v4"
+epochs: 200
+num_updates_per_epoch: 300
