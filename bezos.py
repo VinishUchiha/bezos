@@ -1,5 +1,6 @@
 import argparse
 from yaml import load
+from utils import print_dic
 from io import open
 from toolz.dicttoolz import merge
 from runner import Runner
@@ -15,14 +16,28 @@ parser.add_argument('--det', action='store_true',
                     dest='det', help='Deterministic evaluation')
 args = parser.parse_args()
 
+header = """
+▀█████████▄     ▄████████  ▄███████▄   ▄██████▄     ▄████████ 
+  ███    ███   ███    ███ ██▀     ▄██ ███    ███   ███    ███ 
+  ███    ███   ███    █▀        ▄███▀ ███    ███   ███    █▀  
+ ▄███▄▄▄██▀   ▄███▄▄▄      ▀█▀▄███▀▄▄ ███    ███   ███        
+▀▀███▀▀▀██▄  ▀▀███▀▀▀       ▄███▀   ▀ ███    ███ ▀███████████ 
+  ███    ██▄   ███    █▄  ▄███▀       ███    ███          ███ 
+  ███    ███   ███    ███ ███▄     ▄█ ███    ███    ▄█    ███ 
+▄█████████▀    ██████████  ▀████████▀  ▀██████▀   ▄████████▀  
+"""
+
 
 def main():
+    print(header)
     stream = open(args.config, 'r')
     default = open('./configs/default.yaml', 'r')
     parameters = load(stream)
     default_parameters = load(default)
     if(args.command == 'train'):
         parameters = merge(default_parameters, parameters)
+        print("Training parameters\n-------")
+        print_dic(parameters)
         runner = Runner(**parameters)
         runner.run()
     else:

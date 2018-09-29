@@ -6,6 +6,7 @@ from collections import deque
 
 import numpy as np
 import torch
+from tensorboardX import SummaryWriter
 from tqdm import trange, tqdm
 
 from algorithms.policy_based.A2C import A2C
@@ -100,7 +101,9 @@ class Runner():
         obs = self.envs.reset()
         self.rollouts.obs[0].copy_(obs)
         self.rollouts.to(self.device)
-        self.episode_rewards = deque(maxlen=40)
+        self.episode_rewards = deque(maxlen=10)
+        self.writer = SummaryWriter(
+            comment="{}-{}".format(self.env_name, self.algorithm))
 
     def run(self):
         start = time.time()
@@ -147,7 +150,7 @@ class Runner():
                 self.rollouts.after_update()
 
                 total_num_steps = (epoch + 1) * (j + 1) * \
-                    self.num_processes * self.num_steps * self.skip_frame
+                    self.num_processes * self.num_steps
 
             end = time.time()
             print("Total timesteps: {}, FPS: {}".format(
@@ -163,10 +166,24 @@ class Runner():
             print("Mean value loss: {}, Mean action loss: {}, Mean entropy: {}".format(
                 value_losses.mean(), action_losses.mean(), dist_entropies.mean()))
             print("Results: mean: %.1f +/- %.1f," % (episode_rewards_np.mean(), episode_rewards_np.std()),
-                  "min: %.1f," % episode_rewards_np.min(), "max: %.1f," % episode_rewards_np.max())
+                  "min: %.1f," % episode_rewards_np.min(), "max: %.1f," % episode_rewards_np.mean(), "median: %.1f" % np.median(episode_rewards_np))
+
+            self.writer.add_scalar(
+                'value_loss/mean', value_losses.mean(), epoch)
+            self.writer.add_scalar(
+                'action_loss/mean', action_losses.mean(), epoch)
+            self.writer.add_scalar(
+                'dist_entropy/mean', dist_entropies.mean(), epoch)
+            self.writer.add_scalar(
+                'reward/mean', episode_rewards_np.mean(), epoch)
+            self.writer.add_scalar(
+                'reward/max', episode_rewards_np.mean(), epoch)
+            self.writer.add_scalar(
+                'reward/min', episode_rewards_np.min(), epoch)
+
             if epoch % self.test_every_n_epochs == 0:
                 print("\nTesting...")
-                bar = tqdm(total=self.num_test_episodes)
+                bar = tqdm(total=self.num_test_episodes, leave=False)
                 eval_envs = make_vec_envs(self.env_name, self.seed + self.num_processes,
                                           self.num_processes, self.gamma, self.eval_log_dir,
                                           self.device,
@@ -215,7 +232,7 @@ class Runner():
                 os.makedirs(save_path)
             except OSError:
                 pass
-            # A really ugly way to save a model to CPU
+
             save_model = self.policy
             if self.device == "cuda:0":
                 save_model = copy.deepcopy(self.policy).cpu()

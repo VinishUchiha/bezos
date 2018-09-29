@@ -1,8 +1,13 @@
+env_name: "VizdoomBasic-v0"
 use_gae: True
 algorithm: 'PPO'
-num_processes: 16
-num_updates_per_epoch: 10
+num_processes: 4
+num_test_episodes: 5
+num_updates_per_epoch: 50
 num_steps: 128
+decreasing_lr: False
+grayscale: True
+skip_frame: 12
 
 algorithm_parameters:
   clip_param: 0.1
