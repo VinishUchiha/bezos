@@ -1,0 +1,2 @@
+env_name: "PongNoFrameskip-v4"
+num_updates_per_epoch: 200

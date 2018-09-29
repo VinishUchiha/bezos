@@ -1,0 +1,18 @@
+env_name: "VizdoomBasic-v0"
+use_gae: True
+algorithm: 'PPO'
+num_processes: 8
+num_updates_per_epoch: 10
+num_steps: 128
+decreasing_lr: True
+
+algorithm_parameters:
+  clip_param: 0.1
+  ppo_epoch: 4
+  num_mini_batch: 4
+  value_loss_coef: 1
+  entropy_coef: 0.01
+  lr: 0.00025
+  eps: 0.00001
+  max_grad_norm: 0.5
+  use_clipped_value_loss: True

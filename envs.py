@@ -101,7 +101,10 @@ class PreprocessImage(gym.ObservationWrapper):
         img = transform.resize(img, self.img_size)
         if self.grayscale:
             img = img.mean(-1, keepdims=True)
-        img = img.astype('float32') / 255.
+        # print(img.shape)
+        # print(img)
+        # imsave('imgs/name-{}.png'.format(random.randint(1, 1000000)), img[:, :, 0])
+        img = img.astype('float32')
         return img
 
 
@@ -136,6 +139,8 @@ class VecBezos(VecEnvWrapper):
 
     def reset(self):
         obs = self.venv.reset()
+        if isinstance(obs, list):
+            obs = np.array(obs, dtype=np.float32)
         obs = torch.from_numpy(obs).float().to(self.device)
         return obs
 
@@ -146,6 +151,8 @@ class VecBezos(VecEnvWrapper):
 
     def step_wait(self):
         obs, reward, done, info = self.venv.step_wait()
+        if isinstance(obs, list):
+            obs = np.array(obs, dtype=np.float32)
         obs = torch.from_numpy(obs).float().to(self.device)
         reward = torch.from_numpy(reward).unsqueeze(dim=1).float()
         return obs, reward, done, info

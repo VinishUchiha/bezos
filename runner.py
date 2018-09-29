@@ -9,6 +9,8 @@ import torch
 from tqdm import trange, tqdm
 
 from algorithms.policy_based.A2C import A2C
+from algorithms.policy_based.PPO import PPO
+
 from envs import make_vec_envs
 from networks import ActorCriticNetwork
 from storage import RolloutStorage
@@ -27,6 +29,7 @@ class Runner():
         self.num_steps = args['num_steps']
         self.num_test_episodes = args['num_test_episodes']
         self.test_every_n_epochs = args['test_every_n_epochs']
+        self.use_deterministic_policy_while_testing = args['use_deterministic_policy_while_testing']
 
         self.grayscale = args['grayscale']
         self.skip_frame = args['skip_frame']
@@ -64,12 +67,33 @@ class Runner():
                                   self.gamma, self.log_dir, self.device, False, self.grayscale, self.skip_frame, num_frame_stack=self.num_frame_stack)
 
         self.algorithm = args['algorithm']
+        # Decreasing LR scheduler
+        self.scheduler = None
+
         if self.algorithm == 'A2C':
             actor_critic = ActorCriticNetwork(self.envs.observation_space.shape, self.envs.action_space,
                                               base_kwargs=args['policy_parameters'])
             actor_critic.to(self.device)
             self.policy = actor_critic
             self.agent = A2C(actor_critic, **args['algorithm_parameters'])
+
+        elif self.algorithm == 'PPO':
+            if(args['decreasing_lr']):
+                def lambdalr(epoch): return ((float(self.epochs - epoch)) / float(self.epochs) * args['algorithm_parameters']['lr'])  # noqa: E704
+                actor_critic = ActorCriticNetwork(self.envs.observation_space.shape, self.envs.action_space,
+                                                  base_kwargs=args['policy_parameters'])
+                actor_critic.to(self.device)
+                self.policy = actor_critic
+                self.agent = PPO(actor_critic, lambdalr, **
+                                 args['algorithm_parameters'])
+                self.scheduler = self.agent.scheduler
+            else:
+                actor_critic = ActorCriticNetwork(self.envs.observation_space.shape, self.envs.action_space,
+                                                  base_kwargs=args['policy_parameters'])
+                actor_critic.to(self.device)
+                self.policy = actor_critic
+                self.agent = PPO(actor_critic, None, **
+                                 args['algorithm_parameters'])
 
         self.rollouts = RolloutStorage(self.num_steps, self.num_processes,
                                        self.envs.observation_space.shape, self.envs.action_space,
@@ -82,6 +106,7 @@ class Runner():
     def run(self):
         start = time.time()
         for epoch in range(self.epochs):
+            value_losses, action_losses, dist_entropies = [], [], []
             print("\nEpoch %d\n-------" % (epoch + 1))
             for j in trange(self.num_updates_per_epoch, leave=False):
                 for step in range(self.num_steps):
@@ -112,46 +137,42 @@ class Runner():
 
                 self.rollouts.compute_returns(
                     next_value, self.use_gae, self.gamma, self.tau)
-
+                # print(self.rollouts.rewards)
+                # print(self.rollouts.returns)
                 value_loss, action_loss, dist_entropy = self.agent.update(
                     self.rollouts)
+                value_losses.append(value_loss)
+                action_losses.append(action_loss)
+                dist_entropies.append(dist_entropy)
 
                 self.rollouts.after_update()
 
-                if j % self.save_interval == 0 and self.save_dir != "":
-                    save_path = os.path.join(self.save_dir, self.algorithm)
-                    try:
-                        os.makedirs(save_path)
-                    except OSError:
-                        pass
-
-                    # A really ugly way to save a model to CPU
-                    save_model = self.policy
-                    if self.device == "cuda:0":
-                        save_model = copy.deepcopy(self.policy).cpu()
-
-                    save_model = [save_model,
-                                  getattr(get_vec_normalize(self.envs), 'ob_rms', None)]
-
-                    torch.save(save_model, os.path.join(
-                        save_path, self.env_name + ".pt"))
-
                 total_num_steps = (epoch + 1) * (j + 1) * \
-                    self.num_processes * self.num_steps
+                    self.num_processes * self.num_steps * self.skip_frame
 
             end = time.time()
             print("Total timesteps: {}, FPS: {}".format(
                 total_num_steps, int(total_num_steps / (end - start))))
             print("Statistic of the last %d episodes played" %
                   len(self.episode_rewards))
+            if(len(self.episode_rewards) < 1):
+                self.episode_rewards.append(0)
             episode_rewards_np = np.array(self.episode_rewards)
+            value_losses = np.array(value_losses)
+            action_losses = np.array(action_losses)
+            dist_entropies = np.array(dist_entropies)
+            print("Mean value loss: {}, Mean action loss: {}, Mean entropy: {}".format(
+                value_losses.mean(), action_losses.mean(), dist_entropies.mean()))
             print("Results: mean: %.1f +/- %.1f," % (episode_rewards_np.mean(), episode_rewards_np.std()),
                   "min: %.1f," % episode_rewards_np.min(), "max: %.1f," % episode_rewards_np.max())
             if epoch % self.test_every_n_epochs == 0:
                 print("\nTesting...")
                 bar = tqdm(total=self.num_test_episodes)
                 eval_envs = make_vec_envs(self.env_name, self.seed + self.num_processes,
-                                          self.num_processes, self.gamma, self.eval_log_dir, self.device, True)
+                                          self.num_processes, self.gamma, self.eval_log_dir,
+                                          self.device,
+                                          True,
+                                          self.grayscale, self.skip_frame, num_frame_stack=self.num_frame_stack)
                 vec_norm = get_vec_normalize(eval_envs)
                 if vec_norm is not None:
                     vec_norm.eval()
@@ -166,7 +187,7 @@ class Runner():
                 while len(eval_episode_rewards) < self.num_test_episodes:
                     with torch.no_grad():
                         _, action, _, eval_recurrent_hidden_states = self.policy.act(
-                            obs, eval_recurrent_hidden_states, eval_masks, deterministic=True)
+                            obs, eval_recurrent_hidden_states, eval_masks, deterministic=self.use_deterministic_policy_while_testing)
                     # Obser reward and next obs
                     obs, reward, done, infos = eval_envs.step(action)
                     eval_masks = torch.FloatTensor([[0.0] if done_ else [1.0]
@@ -178,9 +199,28 @@ class Runner():
                                 info['episode']['r'])
                 eval_envs.close()
                 bar.close()
-                print(" Evaluation using {} episodes: mean reward {:.5f}\n".
+                print(eval_episode_rewards)
+                print(" Evaluation using {} episodes: mean reward {:.5f}, min/max {}/{}\n".
                       format(len(eval_episode_rewards),
-                             np.mean(eval_episode_rewards)))
+                             np.mean(eval_episode_rewards), np.min(eval_episode_rewards), np.max(eval_episode_rewards)))
 
             print("Total elapsed time: %.2f minutes" %
                   ((time.time() - start) / 60.0))
+            if self.scheduler is not None:
+                print("Decreasing the learning rate...")
+                self.scheduler.step()
+
+            print("Saving the model...")
+            save_path = os.path.join(self.save_dir, self.algorithm)
+            try:
+                os.makedirs(save_path)
+            except OSError:
+                pass
+            # A really ugly way to save a model to CPU
+            save_model = self.policy
+            if self.device == "cuda:0":
+                save_model = copy.deepcopy(self.policy).cpu()
+            save_model = [save_model,
+                          getattr(get_vec_normalize(self.envs), 'ob_rms', None)]
+            torch.save(save_model, os.path.join(
+                save_path, self.env_name + ".pt"))

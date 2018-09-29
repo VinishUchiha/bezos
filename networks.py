@@ -61,6 +61,8 @@ class ActorCriticNetwork(nn.Module):
         value = self.critic_linear(features)
 
         dist = self.dist(features)
+        #print(dist.probs)
+
 
         # We want action_log_probs and action to be a vector, not a scalar (which is the default output of torch.Categorical)
         if deterministic:
@@ -83,7 +85,6 @@ class ActorCriticNetwork(nn.Module):
 
         action_log_probs = dist.log_prob(action.squeeze(-1)).unsqueeze(-1)
         dist_entropy = dist.entropy().mean()
-
         value = self.critic_linear(features)
 
         return value, action_log_probs, dist_entropy, rnn_hxs

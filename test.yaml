@@ -1,5 +1,12 @@
 no_cuda: False
 env_name: "VizdoomBasic-v0"
-epochs: 200
-num_processes: 4
-num_updates_per_epoch: 300
+# epochs: 200
+num_processes: 2
+# num_test_episodes: 100
+num_updates_per_epoch: 400
+num_steps: 10
+entropy_coef: 100000
+
+# grayscale: True
+# skip_frame: 12
+# num_frame_stack: 1

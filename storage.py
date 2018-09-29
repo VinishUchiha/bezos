@@ -77,6 +77,17 @@ class RolloutStorage(object):
         else:
             self.returns[-1] = next_value
             for step in reversed(range(self.rewards.size(0))):
+                # print("return")
+                # print("result")
+                # print(self.returns[step + 1] *
+                #       gamma * self.masks[step + 1] + self.rewards[step]
+                #       )
+                # print("next return")
+                # print(self.returns[step + 1])
+                # print("this reward")
+                # print(self.rewards[step])
+                # print("gamma")
+                # print(gamma)
                 self.returns[step] = self.returns[step + 1] * \
                     gamma * self.masks[step + 1] + self.rewards[step]
 

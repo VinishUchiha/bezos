@@ -1,11 +1,12 @@
-no_cuda: True
+no_cuda: False
 env_name: "PongNoFrameskip-v4"
 epochs: 100
 num_steps: 5
 num_updates_per_epoch: 1000
 num_processes: 16
-num_test_episodes: 5
+num_test_episodes: 20
 test_every_n_epochs: 1
+use_deterministic_policy_while_testing: False
 use_gae: False
 gamma: 0.99
 tau: 0.95
@@ -14,6 +15,7 @@ log_dir: '/tmp/gym'
 save_dir: './trained_models/'
 save_interval: 100
 algorithm: 'A2C'
+decreasing_lr: False
 
 grayscale: True
 skip_frame: 4
