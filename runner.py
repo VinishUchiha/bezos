@@ -44,7 +44,6 @@ class Runner():
 
         self.seed = args['seed']
         self.log_dir = args['log_dir']
-        self.save_interval = args['save_interval']
         self.save_dir = args['save_dir']
 
         try:

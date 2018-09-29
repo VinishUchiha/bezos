@@ -13,7 +13,6 @@ tau: 0.95
 seed: 1
 log_dir: '/tmp/gym'
 save_dir: './trained_models/'
-save_interval: 100
 algorithm: 'A2C'
 decreasing_lr: False
 
