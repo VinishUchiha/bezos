@@ -24,6 +24,8 @@ class Evaluator():
         self.skip_frame = args['skip_frame']
         self.num_frame_stack = args['num_frame_stack']
 
+        self.scale = args['reward_scaling']
+
         self.seed = args['seed']
 
         try:
@@ -44,7 +46,7 @@ class Evaluator():
 
         self.env = make_vec_envs(self.env_name, self.seed + 1000, 1,
                                  None, None, 'cpu',
-                                 False, self.grayscale, self.skip_frame, num_frame_stack=self.num_frame_stack)
+                                 False, self.grayscale, self.skip_frame, self.scale, num_frame_stack=self.num_frame_stack)
         # Get a render function
         self.render_func = get_render_func(self.env)
 

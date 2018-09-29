@@ -43,6 +43,8 @@ class Runner():
         self.gamma = args['gamma']
         self.tau = args['tau']
 
+        self.reward_scaling = args['reward_scaling']
+
         self.seed = args['seed']
         self.log_dir = args['log_dir']
         self.save_dir = args['save_dir']
@@ -64,7 +66,7 @@ class Runner():
                 os.remove(f)
 
         self.envs = make_vec_envs(self.env_name, self.seed, self.num_processes,
-                                  self.gamma, self.log_dir, self.device, False, self.grayscale, self.skip_frame, num_frame_stack=self.num_frame_stack)
+                                  self.gamma, self.log_dir, self.device, False, self.grayscale, self.skip_frame, self.reward_scaling, num_frame_stack=self.num_frame_stack)
 
         self.algorithm = args['algorithm']
         # Decreasing LR scheduler
@@ -165,6 +167,7 @@ class Runner():
             dist_entropies = np.array(dist_entropies)
             print("Mean value loss: {}, Mean action loss: {}, Mean entropy: {}".format(
                 value_losses.mean(), action_losses.mean(), dist_entropies.mean()))
+            print(episode_rewards_np)
             print("Results: mean: %.1f +/- %.1f," % (episode_rewards_np.mean(), episode_rewards_np.std()),
                   "min: %.1f," % episode_rewards_np.min(), "max: %.1f," % episode_rewards_np.mean(), "median: %.1f" % np.median(episode_rewards_np))
 
@@ -188,7 +191,7 @@ class Runner():
                                           self.num_processes, self.gamma, self.eval_log_dir,
                                           self.device,
                                           True,
-                                          self.grayscale, self.skip_frame, num_frame_stack=self.num_frame_stack)
+                                          self.grayscale, self.skip_frame, self.reward_scaling, num_frame_stack=self.num_frame_stack)
                 vec_norm = get_vec_normalize(eval_envs)
                 if vec_norm is not None:
                     vec_norm.eval()

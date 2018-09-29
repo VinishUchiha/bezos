@@ -61,10 +61,7 @@ class ActorCriticNetwork(nn.Module):
         value = self.critic_linear(features)
 
         dist = self.dist(features)
-        #print(dist.probs)
 
-
-        # We want action_log_probs and action to be a vector, not a scalar (which is the default output of torch.Categorical)
         if deterministic:
             action = dist.probs.argmax(dim=1, keepdim=True)
         else:
@@ -180,7 +177,7 @@ class CNN(NNBase):
         self.train()
 
     def forward(self, inputs, rnn_hxs, masks):
-        features = self.main(inputs / 255.0)
+        features = self.main(inputs / 255)  # Normalize the input
 
         if self.is_recurrent:
             features, rnn_hxs = self._forward_gru(features, rnn_hxs, masks)

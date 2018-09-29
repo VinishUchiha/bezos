@@ -6,9 +6,12 @@ import os
 import gym
 import numpy as np
 from skimage import transform
+from skimage.io import imsave
 import torch
 from gym.spaces.box import Box
 import warnings  # This ignore all the warning messages that are normally printed because of skiimage
+
+from kits.minecraft.marlo_parallel import MarloEnvMaker
 
 
 from baselines import bench
@@ -21,12 +24,17 @@ from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 warnings.filterwarnings('ignore')
 
 
-def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_frame):
+def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_frame, scale, marlo_env_maker=None):
     def _thunk():
+
         if env_id.find('Vizdoom') > -1:
             import kits.doom  # noqa: F401
 
-        env = gym.make(env_id)
+        if marlo_env_maker is not None:
+            env = marlo_env_maker.make_env(env_id)
+        else:
+            env = gym.make(env_id)
+
         is_atari = hasattr(gym.envs, 'atari') and isinstance(
             env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
         if is_atari:
@@ -45,9 +53,10 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_fr
         obs_shape = env.observation_space.shape
         if len(obs_shape) == 3 and obs_shape[2] in [1, 3]:
             if not is_atari:
-                # Wrap deepmind already greyscale + resize + skip frame
+                # Wrap deepmind already greyscale + resize + skip frame + scale
                 env = PreprocessImage(env, grayscale=grayscale)
                 env = SkipWrapper(env, repeat_count=skip_frame)
+                env = RewardScaler(env, scale=scale)
             env = TransposeImage(env)
         return env
 
@@ -55,14 +64,19 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_fr
 
 
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir,
-                  device, allow_early_resets, grayscale, skip_frame, num_frame_stack=None):
-    envs = [make_env(env_name, seed, i, log_dir, allow_early_resets, grayscale, skip_frame)
+                  device, allow_early_resets, grayscale, skip_frame, scale, num_frame_stack=None):
+    marlo_env_maker = None
+    if env_name.find('MarLo') > -1:
+        marlo_env_maker = MarloEnvMaker(num_processes)
+
+    envs = [make_env(env_name, seed, i, log_dir, allow_early_resets, grayscale, skip_frame, scale, marlo_env_maker=marlo_env_maker)
             for i in range(num_processes)]
 
+    print("{} process launched".format(len(envs)))
     if len(envs) > 1:
         envs = SubprocVecEnv(envs)
     else:
-        envs = DummyVecEnv(envs)
+        envs = SubprocVecEnv(envs)  # DummyVecEnv(envs)
 
     # Only use vec normalize for non image based env
     if len(envs.observation_space.shape) == 1:
@@ -72,6 +86,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir,
             envs = VecNormalize(envs, gamma=gamma)
 
     envs = VecBezos(envs, device)
+    print(envs.observation_space.shape)
 
     if num_frame_stack is not None:
         envs = VecBezosFrameStack(envs, num_frame_stack, device)
@@ -98,12 +113,13 @@ class PreprocessImage(gym.ObservationWrapper):
     def observation(self, img):
         """what happens to the observation"""
         img = self.crop(img)
-        img = transform.resize(img, self.img_size)
+        img = transform.resize(img, self.img_size, preserve_range=True)
         if self.grayscale:
             img = img.mean(-1, keepdims=True)
         # print(img.shape)
         # print(img)
-        # imsave('imgs/name-{}.png'.format(random.randint(1, 1000000)), img[:, :, 0])
+        imsave('imgs/name-{}.png'.format(random.randint(1, 1000000)),
+               img[:, :, 0])
         img = img.astype('float32')
         return img
 

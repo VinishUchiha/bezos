@@ -4,7 +4,7 @@ Framework:
     ☐ Make an interface for the algorithms (learn, act, prepare (for filling memories and stuff)
     ✔ Focusing on having a working implementation of A2C and PPO + Vizdoom @done(18-09-29 16:46)
     ☐ HARD: Make a prioritized replay rollout for DDDQN
-    ☐ Implement Visdom instead of tensorboard
+    ✘ Implement Visdom instead of tensorboard @cancelled(18-09-29 21:35)
     ☐ Have a command line tool to select env + algo + variables
     ✔ Load hyperparameters through a config file yaml @done(18-09-29 16:46)
     ☐ Benchmark the shit out of it

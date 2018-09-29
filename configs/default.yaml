@@ -15,6 +15,7 @@ log_dir: '/tmp/gym'
 save_dir: './trained_models/'
 algorithm: 'A2C'
 decreasing_lr: False
+reward_scaling: 1
 
 grayscale: True
 skip_frame: 4
