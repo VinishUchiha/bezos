@@ -11,7 +11,7 @@ parser.add_argument('--config', default='test.yaml',
                     help='Configuration file')
 parser.add_argument('command', choices=['train', 'evaluate'], default='train')
 parser.add_argument('--load-dir', action='store', dest='load_dir',
-                    help='Environment', default="./trained_models/")
+                    help='Trained model dir', default="./trained_models/")
 parser.add_argument('--det', action='store_true',
                     dest='det', help='Deterministic evaluation')
 args = parser.parse_args()

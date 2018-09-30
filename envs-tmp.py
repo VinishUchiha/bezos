@@ -2,20 +2,20 @@
 These functions are used to vectorize a bunch of environments to have multiple processes runnning in parallel
 """
 import os
+
 import gym
 import numpy as np
 from skimage import transform
-# from skimage.io import imsave THIS BREAKS VIZDOOM
 import torch
 from gym.spaces.box import Box
 import warnings  # This ignore all the warning messages that are normally printed because of skiimage
-
 from kits.minecraft.marlo_parallel import MarloEnvMaker
 
-from gym.wrappers import Monitor
+from baselines import bench
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
-from baselines.common.vec_env import VecEnvWrapper, VecEnv
+from baselines.common.vec_env import VecEnvWrapper
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
+from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
 warnings.filterwarnings('ignore')
@@ -23,7 +23,6 @@ warnings.filterwarnings('ignore')
 
 def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_frame, scale, marlo_env_maker=None):
     def _thunk():
-
         if env_id.find('Vizdoom') > -1:
             import kits.doom  # noqa: F401
 
@@ -34,7 +33,7 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_fr
             env = MarloWrapper(env)
         else:
             env = gym.make(env_id)
-
+        env = gym.make(env_id)
         is_atari = hasattr(gym.envs, 'atari') and isinstance(
             env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
         if is_atari:
@@ -43,8 +42,8 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_fr
         env.seed(seed + rank)
 
         if log_dir is not None:
-            env = Monitor(env, os.path.join(log_dir, str(rank)),
-                          force=True, video_callable=lambda x: x % 200 == 0)
+            env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
+                                allow_early_resets=allow_early_resets)
 
         if is_atari:
             env = wrap_deepmind(env)
@@ -53,13 +52,11 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, grayscale, skip_fr
         obs_shape = env.observation_space.shape
         if len(obs_shape) == 3 and obs_shape[2] in [1, 3]:
             if not is_atari:
-                # Wrap deepmind already greyscale + resize + skip frame + scale
+                # Wrap deepmind already greyscale + resize + skip frame
                 env = SkipWrapper(env, repeat_count=skip_frame)
                 env = PreprocessImage(env, grayscale=grayscale)
                 env = RewardScaler(env, scale=scale)
             env = TransposeImage(env)
-        # Add a key in the info dict with the total reward of the episode
-        env = TotalEpisodeReward(env)
         return env
 
     return _thunk
@@ -78,8 +75,10 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir,
     print("{} process launched".format(len(envs)))
     if len(envs) > 1:
         envs = SubprocVecEnv(envs)
+        # envs = FakeSubprocVecEnv(envs)
     else:
-        envs = FakeSubprocVecEnv(envs)
+        #envs = FakeSubprocVecEnv(envs)
+        envs = DummyVecEnv(envs)
 
     # Only use vec normalize for non image based env
     if len(envs.observation_space.shape) == 1:
@@ -102,11 +101,9 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir,
 
 class PreprocessImage(gym.ObservationWrapper):
     def __init__(self, env, height=84, width=84, grayscale=False,
-                 crop=lambda img: img, debug=False):
+                 crop=lambda img: img):
         """A gym wrapper that crops, scales image into the desired shapes and optionally grayscales it."""
         super(PreprocessImage, self).__init__(env)
-        self.nth_image = 0
-        self.debug = debug
         self.img_size = (height, width)
         self.grayscale = grayscale
         self.crop = crop
@@ -118,15 +115,10 @@ class PreprocessImage(gym.ObservationWrapper):
     def observation(self, img):
         """what happens to the observation"""
         img = self.crop(img)
-        img = transform.resize(img, self.img_size, preserve_range=True)
+        img = transform.resize(img, self.img_size)
         if self.grayscale:
-            img = np.expand_dims(np.dot(img.astype('float32'), np.array(
-                [0.299, 0.587, 0.114], 'float32')), axis=-1)
-        if self.debug:
-            # imsave('imgs/name-{}.png'.format(self.nth_image),
-            #        img[:, :, 0] / 255)
-            self.nth_image += 1
-        img = img.astype('float32')
+            img = img.mean(-1, keepdims=True)
+        img = img.astype('float32') / 255.
         return img
 
 
@@ -161,8 +153,6 @@ class VecBezos(VecEnvWrapper):
 
     def reset(self):
         obs = self.venv.reset()
-        if isinstance(obs, list):
-            obs = np.array(obs, dtype=np.float32)
         obs = torch.from_numpy(obs).float().to(self.device)
         return obs
 
@@ -173,8 +163,6 @@ class VecBezos(VecEnvWrapper):
 
     def step_wait(self):
         obs, reward, done, info = self.venv.step_wait()
-        if isinstance(obs, list):
-            obs = np.array(obs, dtype=np.float32)
         obs = torch.from_numpy(obs).float().to(self.device)
         reward = torch.from_numpy(reward).unsqueeze(dim=1).float()
         return obs, reward, done, info
@@ -193,30 +181,6 @@ class RewardScaler(gym.RewardWrapper):
 
     def reward(self, reward):
         return reward * self.scale
-
-
-class TotalEpisodeReward(gym.Wrapper):
-    def __init__(self, env):
-        super(TotalEpisodeReward, self).__init__(env)
-        self.rewards = None
-
-    def reset(self):
-        self.rewards = []
-        return self.env.reset()
-
-    def update(self, ob, rew, done, info):
-        self.rewards.append(rew)
-        if done:
-            eprew = sum(self.rewards)
-            eplen = len(self.rewards)
-            epinfo = {"r": round(eprew, 6), "l": eplen}
-            if isinstance(info, dict):
-                info['episode'] = epinfo
-
-    def step(self, action):
-        ob, rew, done, info = self.env.step(action)
-        self.update(ob, rew, done, info)
-        return (ob, rew, done, info)
 
 
 class VecNormalize(VecNormalize_):
@@ -268,8 +232,7 @@ class VecBezosFrameStack(VecEnvWrapper):
 
         observation_space = gym.spaces.Box(
             low=low, high=high, dtype=venv.observation_space.dtype)
-        VecEnvWrapper.__init__(
-            self, venv, observation_space=observation_space)
+        VecEnvWrapper.__init__(self, venv, observation_space=observation_space)
 
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
@@ -334,45 +297,6 @@ class SkipWrapper(gym.Wrapper):
     def reset(self):
         self.stepcount = 0
         return self.env.reset()
-
-
-class FakeSubprocVecEnv(VecEnv):
-    def __init__(self, env_fns):
-        self.envs = [fn() for fn in env_fns]
-        env = self.envs[0]
-        VecEnv.__init__(self, len(env_fns),
-                        env.observation_space, env.action_space)
-
-    def step_async(self, actions):
-        self.actions = actions
-
-    def step_wait(self):
-        obs = []
-        rews = []
-        dones = []
-        infos = []
-
-        for i in range(self.num_envs):
-            obs_tuple, reward, done, info = self.envs[i].step(self.actions[i])
-            if done:
-                obs_tuple = self.envs[i].reset()
-            obs.append(obs_tuple)
-            rews.append(reward)
-            dones.append(done)
-            infos.append(info)
-
-        return np.stack(obs), np.stack(rews), np.stack(dones), infos
-
-    def reset(self):
-        obs = []
-        for i in range(self.num_envs):
-            obs_tuple = self.envs[i].reset()
-            obs.append(obs_tuple)
-        return np.stack(obs)
-
-    def close(self):
-        for i in range(self.num_envs):
-            self.envs[i].close()
 
 
 def get_render_func(venv):

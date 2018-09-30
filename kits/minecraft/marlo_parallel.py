@@ -1,13 +1,13 @@
 import marlo
 from toolz.dicttoolz import merge
 from marlo.utils import launch_clients
-import os
 
 
 class MarloEnvMaker():
     def __init__(self, num_processes):
         self.num_processes = num_processes
-        self.client_pool = [('127.0.0.1', 53761)]#launch_clients(num_processes)
+        self.client_pool = [('127.0.0.1', 10000),('127.0.0.1', 10001)]#launch_clients(num_processes)
+        # self.client_pool = launch_clients(num_processes)
 
     def make_env(self, env_id):
         params = merge(params_default, {
@@ -21,8 +21,8 @@ class MarloEnvMaker():
 
 resolution = [400, 300]
 params_default = {
-    "tick_length": 50,
-    "prioritise_offscreen_rendering": True,
+    "tick_length": 20,
+    "prioritise_offscreen_rendering": False,
     'videoResolution': resolution,
     'forceWorldReset': False,
     'kill_clients_after_num_rounds': 10000000000000

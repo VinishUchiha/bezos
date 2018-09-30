@@ -8,5 +8,10 @@ Framework:
     ☐ Have a command line tool to select env + algo + variables
     ✔ Load hyperparameters through a config file yaml @done(18-09-29 16:46)
     ☐ Benchmark the shit out of it
-    ☐ Make it compatible with Minecraft
+    ✔ Make it compatible with Minecraft @done(18-09-30 00:15)
+    ☐ Make MC faster
+    ✔ Restrict minecraft action space (forward,backward,left,right) @done(18-09-30 14:41)
+    ☐ Fix epoch reward reporting problem
+    ☐ Prevent the bot from quitting the mission
+    ☐ Submit something today
     ✔ Make your own gym wrapper around visdoom @done(18-09-29 16:46)

@@ -22,6 +22,7 @@ class Runner():
     def __init__(self, **args):
         cuda = not args['no_cuda'] and torch.cuda.is_available()
         self.device = torch.device("cuda:0" if cuda else "cpu")
+        print("Model running on device: {}".format(self.device))
         torch.set_num_threads(1)
 
         self.env_name = args['env_name']
@@ -51,6 +52,9 @@ class Runner():
 
         try:
             os.makedirs(args['log_dir'])
+            files = glob.glob(os.path.join(args['log_dir'], '*.manifest.json'))
+            for f in files:
+                os.remove(f)
         except OSError:
             files = glob.glob(os.path.join(args['log_dir'], '*.monitor.csv'))
             for f in files:
@@ -123,7 +127,6 @@ class Runner():
 
                     # Observe reward and next obs
                     obs, reward, done, infos = self.envs.step(action)
-
                     for info in infos:
                         if 'episode' in info.keys():
                             self.episode_rewards.append(info['episode']['r'])
@@ -168,8 +171,8 @@ class Runner():
             print("Mean value loss: {}, Mean action loss: {}, Mean entropy: {}".format(
                 value_losses.mean(), action_losses.mean(), dist_entropies.mean()))
             print(episode_rewards_np)
-            print("Results: mean: %.1f +/- %.1f," % (episode_rewards_np.mean(), episode_rewards_np.std()),
-                  "min: %.1f," % episode_rewards_np.min(), "max: %.1f," % episode_rewards_np.mean(), "median: %.1f" % np.median(episode_rewards_np))
+            print("Results: mean: {} +/- {}".format(np.mean(episode_rewards_np), np.std(episode_rewards_np)))
+            print("Min: {}, Max: {}, Median: {}".format(np.min(episode_rewards_np), np.max(episode_rewards_np), np.median(episode_rewards_np)))
 
             self.writer.add_scalar(
                 'value_loss/mean', value_losses.mean(), epoch)
@@ -180,11 +183,11 @@ class Runner():
             self.writer.add_scalar(
                 'reward/mean', episode_rewards_np.mean(), epoch)
             self.writer.add_scalar(
-                'reward/max', episode_rewards_np.mean(), epoch)
+                'reward/max', episode_rewards_np.max(), epoch)
             self.writer.add_scalar(
                 'reward/min', episode_rewards_np.min(), epoch)
 
-            if epoch % self.test_every_n_epochs == 0:
+            if (epoch + 1) % self.test_every_n_epochs == 0:
                 print("\nTesting...")
                 bar = tqdm(total=self.num_test_episodes, leave=False)
                 eval_envs = make_vec_envs(self.env_name, self.seed + self.num_processes,
@@ -211,6 +214,7 @@ class Runner():
                     obs, reward, done, infos = eval_envs.step(action)
                     eval_masks = torch.FloatTensor([[0.0] if done_ else [1.0]
                                                     for done_ in done])
+
                     for info in infos:
                         if 'episode' in info.keys():
                             bar.update(1)
