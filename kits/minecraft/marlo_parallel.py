@@ -6,8 +6,8 @@ from marlo.utils import launch_clients
 class MarloEnvMaker():
     def __init__(self, num_processes):
         self.num_processes = num_processes
-        self.client_pool = [('127.0.0.1', 10000),('127.0.0.1', 10001)]#launch_clients(num_processes)
-        # self.client_pool = launch_clients(num_processes)
+        self.client_pool = [('127.0.0.1', 60125),('127.0.0.1', 60126)]
+        #self.client_pool = launch_clients(num_processes)
 
     def make_env(self, env_id):
         params = merge(params_default, {
@@ -19,9 +19,9 @@ class MarloEnvMaker():
         return marlo.init(join_token[0])
 
 
-resolution = [400, 300]
+resolution = [84, 84]
 params_default = {
-    "tick_length": 20,
+    "tick_length": 5,
     "prioritise_offscreen_rendering": False,
     'videoResolution': resolution,
     'forceWorldReset': False,

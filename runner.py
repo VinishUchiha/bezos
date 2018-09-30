@@ -129,6 +129,7 @@ class Runner():
                     obs, reward, done, infos = self.envs.step(action)
                     for info in infos:
                         if 'episode' in info.keys():
+                            print("New episode")
                             self.episode_rewards.append(info['episode']['r'])
 
                     # If done then clean the history of observations.

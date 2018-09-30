@@ -5,7 +5,7 @@ algorithm: 'PPO'
 num_processes: 2
 num_test_episodes: 5
 test_every_n_epochs: 1000 # No test for now
-num_updates_per_epoch: 2
+num_updates_per_epoch: 8
 num_steps: 128
 decreasing_lr: False
 grayscale: True

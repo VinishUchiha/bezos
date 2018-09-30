@@ -78,6 +78,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir,
     print("{} process launched".format(len(envs)))
     if len(envs) > 1:
         envs = SubprocVecEnv(envs)
+        # envs = FakeSubprocVecEnv(envs)
     else:
         envs = FakeSubprocVecEnv(envs)
 
