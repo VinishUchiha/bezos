@@ -13,7 +13,7 @@
     <img src="https://raw.githubusercontent.com/justinglibert/bezos/master/github/icon.gif" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">Bezos: Build your own Reinforcement Learning framework</h3>
+  <h3 align="center">Bezos :godmode: : Build your own Reinforcement Learning framework</h3>
 
   <p align="center">
     Bezos is a light Deep RL framework that you can fork and extend.
