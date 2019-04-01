@@ -1,5 +1,5 @@
 env_name: "MarLo-FindTheGoal-v0"
-epochs: 5000
+epochs: 250
 use_gae: True
 algorithm: 'PPO'
 num_processes: 2
@@ -7,9 +7,9 @@ num_test_episodes: 5
 test_every_n_epochs: 1000 # No test for now
 num_updates_per_epoch: 8
 num_steps: 128
-decreasing_lr: False
+decreasing_lr: False # not working
 grayscale: True
-skip_frame: 4
+skip_frame: 1
 reward_scaling: 1
 num_frame_stack: 4
 

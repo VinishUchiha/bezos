@@ -107,7 +107,7 @@ class Runner():
         obs = self.envs.reset()
         self.rollouts.obs[0].copy_(obs)
         self.rollouts.to(self.device)
-        self.episode_rewards = deque(maxlen=10)
+        self.episode_rewards = deque(maxlen=50)
         self.writer = SummaryWriter(
             comment="{}-{}".format(self.env_name, self.algorithm))
 
@@ -145,8 +145,6 @@ class Runner():
 
                 self.rollouts.compute_returns(
                     next_value, self.use_gae, self.gamma, self.tau)
-                # print(self.rollouts.rewards)
-                # print(self.rollouts.returns)
                 value_loss, action_loss, dist_entropy = self.agent.update(
                     self.rollouts)
                 value_losses.append(value_loss)

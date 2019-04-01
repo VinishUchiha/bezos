@@ -53,7 +53,7 @@ class Evaluator():
         # We need to use the same statistics for normalization as used in training
         self.actor_critic, self.ob_rms = \
             torch.load(os.path.join(self.load_dir,
-                                    self.algorithm, self.env_name + ".pt"))
+                                    self.algorithm, self.env_name + ".pt"), map_location='cpu')
         self.actor_critic.to('cpu')
         self.vec_norm = get_vec_normalize(self.env)
         if self.vec_norm is not None:
@@ -70,7 +70,7 @@ class Evaluator():
             recurrent_hidden_states = torch.zeros(
                 1, self.actor_critic.recurrent_hidden_state_size)
             masks = torch.zeros(1, 1)
-            if self.render_func is not None:
+            if self.render_func is not None and self.env_name.find('MarLo') == -1:
                 self.render_func('human')
             while True:
                 with torch.no_grad():
@@ -86,7 +86,7 @@ class Evaluator():
                     rewards.append(total_reward[0][0])
                     break
 
-                if self.render_func is not None:
+                if self.render_func is not None and self.env_name.find('MarLo') == -1:
                     self.render_func('human')
         for i, r in enumerate(rewards):
             print("Episode {}: {}".format(i + 1, r))
