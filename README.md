@@ -55,7 +55,7 @@
 
 
 
-There are many great reinforcement learning frameworks on Github, however, I didn't find one that was light and small enough to let me fork it and add my own algorithms while still feeling in control. I thus created Bezos, a very light RL framework which implements all the boring things so that you don't have to. 
+There are many great reinforcement learning frameworks on GitHub, however, I didn't find one that was light and small enough to let me fork it and add my own algorithms while still feeling in control. I thus created Bezos, a very light RL framework which implements all the boring things so that you don't have to. 
 
 ## Features
 - Rollout class (supports GAE, reward to go, and recurrent neural network)
