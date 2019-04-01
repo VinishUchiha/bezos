@@ -10,7 +10,7 @@
 <br />
 <p align="center">
   <a href="https://github.com/justinglibert/bezos">
-    <img src="https://raw.githubusercontent.com/justinglibert/bezos/master/github/bezos-icon.gif" alt="Logo" width="80" height="80">
+    <img src="https://raw.githubusercontent.com/justinglibert/bezos/master/github/icon.gif" alt="Logo" width="80" height="80">
   </a>
 
   <h3 align="center">Bezos: Build your own Reinforcement Learning framework</h3>
@@ -49,7 +49,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-![](https://raw.githubusercontent.com/justinglibert/bezos/master/github/bezos.gif)
+![](https://raw.githubusercontent.com/justinglibert/bezos/master/github/cover.gif)
 
 
 
