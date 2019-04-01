@@ -63,6 +63,9 @@ There are many great reinforcement learning frameworks on Github, however, I did
 - A simple Actor Critic Network
 - RL Algorithm: PPO [Paper on Arxiv](https://arxiv.org/abs/1707.06347)
 - RL Algorithm: A2C [OpenAI blog post](https://openai.com/blog/baselines-acktr-a2c/)
+- Supports all the OpenAI Gym env
+- I added all the Vizdoom envs as well
+- Supports the marLo env [Github](https://github.com/crowdAI/marLo)
 
 ### Built With
 The framework uses Pytorch to do all the deep learning stuff, numpy, and OpenAI Gym
