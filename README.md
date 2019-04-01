@@ -49,7 +49,9 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-![](https://raw.githubusercontent.com/justinglibert/bezos/master/github/cover.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/justinglibert/bezos/master/github/cover.gif"/>
+</p>
 
 
 
