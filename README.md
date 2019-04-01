@@ -66,6 +66,7 @@ There are many great reinforcement learning frameworks on Github, however, I did
 - Supports all the OpenAI Gym env
 - I added all the Vizdoom envs as well (look into kits/)
 - Supports the marLo env [Github](https://github.com/crowdAI/marLo) (look into kits/)
+- A bunch of useful OpenAI Gym wrappers. Includes frame skipping, RGB→Grayscale, cropping, and many more. (look into envs.py)
 
 ### Built With
 The framework uses Pytorch to do all the deep learning stuff, numpy, and OpenAI Gym
