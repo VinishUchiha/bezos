@@ -59,7 +59,7 @@ There are many great reinforcement learning frameworks on GitHub, however, I did
 
 ## Features
 - Rollout class (supports GAE, reward to go, and recurrent neural network)
-- Runner class: loads a Gym env and runs one or multiple agent on the environment to generate rollouts
+- Runner class: loads a Gym env and runs one or multiple agents on the environment to generate rollouts
 - A simple Actor Critic Network
 - RL Algorithm: PPO [Paper on Arxiv](https://arxiv.org/abs/1707.06347)
 - RL Algorithm: A2C [OpenAI blog post](https://openai.com/blog/baselines-acktr-a2c/)
