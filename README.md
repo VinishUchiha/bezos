@@ -122,7 +122,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Justin Glibert - justin@glibert.io
+Justin Glibert - justin AT glibert d0t io
 
 <!-- MARKDOWN LINKS & IMAGES -->
 [contributors-shield]: https://img.shields.io/badge/contributors-1-orange.svg?style=flat-square
